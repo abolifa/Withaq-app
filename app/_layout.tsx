@@ -1,29 +1,40 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { AuthProvider } from "@/context/AuthProvider";
+import "@/global.css";
+import { queryClient } from "@/lib/client";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Stack } from "expo-router";
+import * as Updates from "expo-updates";
+import { useEffect } from "react";
+import { I18nManager } from "react-native";
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+if (!I18nManager.isRTL) {
+  I18nManager.allowRTL(true);
+  I18nManager.forceRTL(true);
+  I18nManager.swapLeftAndRightInRTL(true);
+}
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
-  }
+  useEffect(() => {
+    if (!I18nManager.isRTL) {
+      Updates.reloadAsync();
+    }
+  }, []);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(main)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="(modals)/documents/add/[id]"
+            options={{
+              presentation: "modal",
+              animation: "slide_from_bottom",
+              headerShown: true,
+            }}
+          />
+        </Stack>
+      </QueryClientProvider>
+    </AuthProvider>
   );
 }

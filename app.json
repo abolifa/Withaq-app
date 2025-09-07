@@ -4,19 +4,27 @@
     "slug": "withaq",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/app-icon.png",
     "scheme": "withaq",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.abdobolifa.withaq",
+      "icon": "./assets/images/app-icon.png",
+      "infoPlist": {
+        "NSCameraUsageDescription": "هذا التطبيق يحتاج إلى الكاميرا لالتقاط المرفقات.",
+        "NSPhotoLibraryUsageDescription": "هذا التطبيق يحتاج للوصول إلى الصور لاختيار المرفقات من الاستوديو.",
+        "NSPhotoLibraryAddUsageDescription": "هذا التطبيق يحتاج لحفظ الصور الملتقطة داخل ألبوم الصور."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/app-icon.png",
+        "backgroundColor": "#FFFFFF"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.abdobolifa.withaq"
     },
     "web": {
       "bundler": "metro",
@@ -28,15 +36,23 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/app-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#FFFFFF"
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true,
+          "faceIDPermission": "Allow $(PRODUCT_NAME) to access your Face ID biometric data."
         }
       ]
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "rtl": true
     }
   }
 }
