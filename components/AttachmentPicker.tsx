@@ -11,9 +11,15 @@ import {
   View,
 } from "react-native";
 
+export interface FileItem {
+  uri: string;
+  name: string;
+  type: string;
+}
+
 interface Props {
-  value: string[];
-  onChange: (val: string[]) => void;
+  value: FileItem[];
+  onChange: (val: FileItem[]) => void;
 }
 
 const AttachmentPicker: React.FC<Props> = ({ value, onChange }) => {
@@ -21,22 +27,22 @@ const AttachmentPicker: React.FC<Props> = ({ value, onChange }) => {
 
   const pickImage = async (fromCamera: boolean) => {
     try {
-      // Request permissions first
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (fromCamera && status !== "granted") {
-        Alert.alert("إذن الكاميرا مرفوض", "يرجى السماح باستخدام الكاميرا");
-        return;
-      }
-
-      const { status: libStatus } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!fromCamera && libStatus !== "granted") {
-        Alert.alert("إذن الوصول للصور مرفوض", "يرجى السماح للوصول إلى الصور");
-        return;
+      if (fromCamera) {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert("إذن الكاميرا مرفوض", "يرجى السماح باستخدام الكاميرا");
+          return;
+        }
+      } else {
+        const { status } =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert("إذن الوصول للصور مرفوض", "يرجى السماح للوصول إلى الصور");
+          return;
+        }
       }
 
       let result: ImagePicker.ImagePickerResult;
-
       if (fromCamera) {
         result = await ImagePicker.launchCameraAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -51,18 +57,33 @@ const AttachmentPicker: React.FC<Props> = ({ value, onChange }) => {
       }
 
       if (!result.canceled) {
-        const uris = result.assets.map((a) => a.uri);
-        onChange([...value, ...uris]);
+        const assets = "assets" in result ? result.assets : [result];
+        const files: FileItem[] = assets.map((asset, idx) => {
+          const fileName =
+            asset.fileName || asset.uri.split("/").pop() || `file_${idx}.jpg`;
+          let type = "image/jpeg";
+          if (fileName.endsWith(".png")) type = "image/png";
+          if (fileName.endsWith(".pdf")) type = "application/pdf";
+
+          return {
+            uri: asset.uri,
+            name: fileName,
+            type,
+          };
+        });
+
+        onChange([...(value || []), ...files]);
       }
     } catch (err) {
       console.error("Attachment error:", err);
+      Alert.alert("خطأ", "فشل في اختيار الملف");
     } finally {
       setOpen(false);
     }
   };
 
   const removeFile = (uri: string) => {
-    onChange(value.filter((f) => f !== uri));
+    onChange(value.filter((f) => f.uri !== uri));
   };
 
   return (
@@ -85,17 +106,17 @@ const AttachmentPicker: React.FC<Props> = ({ value, onChange }) => {
       {value.length > 0 && (
         <FlatList
           data={value}
-          keyExtractor={(uri) => uri}
+          keyExtractor={(file) => file.uri}
           horizontal
           className="mt-3"
           renderItem={({ item }) => (
             <View className="relative mr-2">
               <Image
-                source={{ uri: item }}
+                source={{ uri: item.uri }}
                 className="w-20 h-20 rounded-lg border"
               />
               <TouchableOpacity
-                onPress={() => removeFile(item)}
+                onPress={() => removeFile(item.uri)}
                 className="absolute top-1 right-1 bg-black/60 rounded-full p-1"
               >
                 <Ionicons name="close" size={14} color="white" />

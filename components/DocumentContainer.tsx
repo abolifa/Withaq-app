@@ -1,31 +1,17 @@
 import { getDocumentMeta } from "@/lib/documentHelpers";
 import { Document } from "@/types/types";
 import { Ionicons } from "@expo/vector-icons";
+import Feather from "@expo/vector-icons/Feather";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { format } from "date-fns";
 import dayjs from "dayjs";
 import { router } from "expo-router";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
-function getStatus(expiryDate?: string) {
-  if (!expiryDate)
-    return { label: "غير محدد", color: "#6B7280", bg: "#F3F4F6" };
-
-  const today = dayjs();
-  const exp = dayjs(expiryDate);
-
-  if (exp.isBefore(today, "day")) {
-    return { label: "منتهي", color: "#DC2626", bg: "#FEE2E2" };
-  }
-  if (exp.diff(today, "day") <= 30) {
-    return { label: "قرب الانتهاء", color: "#F59E0B", bg: "#FEF3C7" };
-  }
-  return { label: "ساري", color: "#16A34A", bg: "#DCFCE7" };
-}
-
 const DocumentContainer = ({ document }: { document: Document }) => {
   const meta = getDocumentMeta(document?.type);
-  const status = getStatus(document?.expiry_date);
+  const expiryLeft = getExpiryLeft(document?.expiry_date);
 
   return (
     <TouchableOpacity
@@ -54,13 +40,13 @@ const DocumentContainer = ({ document }: { document: Document }) => {
           </View>
           <View
             className="px-3 py-1 rounded-full"
-            style={{ backgroundColor: status.bg }}
+            style={{ backgroundColor: expiryLeft.bg }}
           >
             <Text
               className="text-xs font-semibold"
-              style={{ color: status.color }}
+              style={{ color: expiryLeft.color }}
             >
-              {status.label}
+              {expiryLeft.label}
             </Text>
           </View>
         </View>
@@ -103,6 +89,33 @@ const DocumentContainer = ({ document }: { document: Document }) => {
             </View>
           )}
 
+          <View className="flex flex-row w-full items-center gap-2 mt-5">
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: "/documents/view/[id]",
+                  params: { id: String(document.id), name: meta.label },
+                })
+              }
+              className="flex-1 py-3 bg-green-300 rounded-lg flex-row justify-center
+            items-center gap-2"
+            >
+              <MaterialIcons name="picture-as-pdf" size={24} color="green" />
+              <Text className="text-center text-green-600 font-semibold">
+                عرض الملف
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push(`/documents/add/${document.id}`)}
+              className="flex-1 py-3 bg-blue-300 rounded-lg flex-row justify-center
+            items-center gap-2"
+            >
+              <Feather name="edit" size={18} color="blue" />
+              <Text className=" text-blue-600 font-semibold">تعديل</Text>
+            </TouchableOpacity>
+          </View>
+
           {document?.notes && (
             <Text className="text-gray-500 text-sm flex-1 leading-5 text-center mt-3">
               {document.notes}
@@ -115,3 +128,48 @@ const DocumentContainer = ({ document }: { document: Document }) => {
 };
 
 export default DocumentContainer;
+
+function getExpiryLeft(expiryDate?: string) {
+  if (!expiryDate) {
+    return { label: "غير محدد", color: "#6B7280", bg: "#F3F4F6" };
+  }
+
+  const today = dayjs();
+  const exp = dayjs(expiryDate);
+
+  if (exp.isBefore(today, "day")) {
+    return { label: "منتهي", color: "#DC2626", bg: "#FEE2E2" };
+  }
+
+  const years = exp.diff(today, "year");
+  if (years >= 1) {
+    return {
+      label: `${years} سنة`,
+      color: "#16A34A", // green
+      bg: "#DCFCE7",
+    };
+  }
+
+  const months = exp.diff(today, "month");
+  if (months >= 1) {
+    if (months > 6) {
+      return {
+        label: `${months} أشهر`,
+        color: "#16A34A", // green
+        bg: "#DCFCE7",
+      };
+    }
+    return {
+      label: `${months} أشهر`,
+      color: "#F59E0B", // amber
+      bg: "#FEF3C7",
+    };
+  }
+
+  const days = exp.diff(today, "day");
+  return {
+    label: `${days} أيام`,
+    color: "#DC2626", // red
+    bg: "#FEE2E2",
+  };
+}
